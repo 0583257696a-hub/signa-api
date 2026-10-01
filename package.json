@@ -1,0 +1,31 @@
+{
+  "name": "signa-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Signa backend API: Cloudflare Workers + Hono + D1 + R2 + Queues",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate:local": "wrangler d1 migrations apply signa-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply signa-db --remote",
+    "cf-typegen": "wrangler types"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "dependencies": {
+    "hono": "^4.13.12",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261001.1",
+    "@types/node": "^26.6.3",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3",
+    "wrangler": "^4.146.0"
+  }
+}

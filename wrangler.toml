@@ -1,0 +1,149 @@
+# Signa API — Cloudflare Worker configuration.
+# Secrets are NOT stored here. Set them with `wrangler secret put <NAME> [--env <env>]`:
+#   APP_SECRET (required, ≥ 32 random chars), DEV_PAYMENT_WEBHOOK_SECRET (dev payments only),
+#   SIGN_PROVIDER_API_KEY (http sign provider), GOOGLE_CLIENT_SECRET (optional OAuth).
+# For local development copy .dev.vars.example to .dev.vars.
+
+name = "signa-api"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[observability]
+enabled = true
+
+[vars]
+APP_ENV = "development"
+APP_BASE_URL = "http://localhost:3000"
+API_BASE_URL = "http://localhost:8787"
+CORS_ALLOWED_ORIGINS = "http://localhost:3000"
+LOG_LEVEL = "info"
+EMAIL_PROVIDER = "dev"
+PAYMENT_PROVIDER = "dev"
+SIGN_PROVIDER = "dictionary_lookup"
+SIGN_PROVIDER_VALIDATED = "false"
+SIGN_SYNC_FALLBACK_MAX_CHARS = "280"
+SIGN_RESULT_TTL_SECONDS = "3600"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "signa-db"
+database_id = "a19458fd-f2ab-48c0-ad9c-fd4c185eaf39" # replace after `wrangler d1 create signa-db`
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "ASSETS_BUCKET"
+bucket_name = "signa-assets"
+
+[[queues.producers]]
+binding = "SIGN_JOBS_QUEUE"
+queue = "signa-sign-jobs"
+
+[[queues.consumers]]
+queue = "signa-sign-jobs"
+max_batch_size = 10
+max_batch_timeout = 2
+max_retries = 3
+dead_letter_queue = "signa-sign-jobs-dlq"
+
+[[queues.consumers]]
+queue = "signa-sign-jobs-dlq"
+max_batch_size = 10
+max_retries = 1
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+# ---------------------------------------------------------------------------
+[env.staging]
+name = "signa-api-staging"
+workers_dev = false
+
+[env.staging.vars]
+APP_ENV = "staging"
+APP_BASE_URL = "https://staging.signa.example"
+API_BASE_URL = "https://api.staging.signa.example"
+CORS_ALLOWED_ORIGINS = "https://staging.signa.example"
+LOG_LEVEL = "info"
+EMAIL_PROVIDER = "dev"
+PAYMENT_PROVIDER = "dev"
+SIGN_PROVIDER = "dictionary_lookup"
+SIGN_PROVIDER_VALIDATED = "false"
+SIGN_SYNC_FALLBACK_MAX_CHARS = "280"
+SIGN_RESULT_TTL_SECONDS = "3600"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "signa-db-staging"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[env.staging.r2_buckets]]
+binding = "ASSETS_BUCKET"
+bucket_name = "signa-assets-staging"
+
+[[env.staging.queues.producers]]
+binding = "SIGN_JOBS_QUEUE"
+queue = "signa-sign-jobs-staging"
+
+[[env.staging.queues.consumers]]
+queue = "signa-sign-jobs-staging"
+max_batch_size = 10
+max_batch_timeout = 2
+max_retries = 3
+dead_letter_queue = "signa-sign-jobs-staging-dlq"
+
+[[env.staging.queues.consumers]]
+queue = "signa-sign-jobs-staging-dlq"
+max_retries = 1
+
+[env.staging.triggers]
+crons = ["*/10 * * * *"]
+
+# ---------------------------------------------------------------------------
+[env.production]
+name = "signa-api-production"
+workers_dev = false
+
+[env.production.vars]
+APP_ENV = "production"
+APP_BASE_URL = "https://signa.example"
+API_BASE_URL = "https://api.signa.example"
+CORS_ALLOWED_ORIGINS = "https://signa.example"
+LOG_LEVEL = "info"
+# Delivery stays disabled until a real provider adapter is implemented and configured.
+EMAIL_PROVIDER = "disabled"
+# No payment provider selected yet: checkout returns `provider_not_configured`.
+PAYMENT_PROVIDER = "none"
+SIGN_PROVIDER = "dictionary_lookup"
+SIGN_PROVIDER_VALIDATED = "false"
+SIGN_SYNC_FALLBACK_MAX_CHARS = "280"
+SIGN_RESULT_TTL_SECONDS = "3600"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "signa-db-production"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[env.production.r2_buckets]]
+binding = "ASSETS_BUCKET"
+bucket_name = "signa-assets-production"
+
+[[env.production.queues.producers]]
+binding = "SIGN_JOBS_QUEUE"
+queue = "signa-sign-jobs-production"
+
+[[env.production.queues.consumers]]
+queue = "signa-sign-jobs-production"
+max_batch_size = 10
+max_batch_timeout = 2
+max_retries = 3
+dead_letter_queue = "signa-sign-jobs-production-dlq"
+
+[[env.production.queues.consumers]]
+queue = "signa-sign-jobs-production-dlq"
+max_retries = 1
+
+[env.production.triggers]
+crons = ["*/10 * * * *"]
