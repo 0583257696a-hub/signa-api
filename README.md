@@ -57,4 +57,4 @@ These items need decisions, credentials or external work and are **not** done:
 - **ISL translation engine.** The default `dictionary_lookup` adapter is an experimental, illustrative lookup over approved entries. It is **not** ISL grammar, and its output is always labelled `experimental`. A linguistically validated engine can be plugged in through `SignTranslationProvider` / `SIGN_PROVIDER=http`.
 - **Dictionary content and animation assets.** The dictionary starts with 114 *candidate concepts* and no signs. Entries need ISL expert review and confirmed licences before publication (see `docs/DICTIONARY.md`).
 - **Google OAuth.** Implemented, but it needs Google credentials and the `google_oauth` feature flag turned on.
-- **Production values.** Domains, D1 database IDs and secrets in `wrangler.toml` are placeholders.
+- **Production values.** Production runs on the `signa-api` Worker at `https://signa-api.abd-digital.workers.dev` (D1 `signa-db-production`); staging values in `wrangler.toml` are still placeholders, and a custom domain is not set up yet.
