@@ -80,7 +80,8 @@ export const csrfProtection: MiddlewareHandler<AppEnv> = async (c, next) => {
     const exempt = CSRF_TOKEN_EXEMPT.test(c.req.path);
     if (!exempt || !c.req.path.includes('/webhooks/')) {
       const origin = c.req.header('origin') ?? refererOrigin(c.req.header('referer'));
-      const allowed = new Set([svc.config.APP_BASE_URL, svc.config.API_BASE_URL, ...svc.config.CORS_ALLOWED_ORIGINS].map(stripSlash));
+      // The Worker's own origin is always allowed: the web app is served from it (same-origin requests).
+      const allowed = new Set([new URL(c.req.url).origin, svc.config.APP_BASE_URL, svc.config.API_BASE_URL, ...svc.config.CORS_ALLOWED_ORIGINS].map(stripSlash));
       if (origin && !allowed.has(stripSlash(origin))) throw new AppError('csrf_failed');
     }
     if (auth && !exempt && !(await verifyCsrf(svc, auth.session, c.req.header('x-csrf-token')))) {

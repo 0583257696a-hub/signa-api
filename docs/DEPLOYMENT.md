@@ -38,6 +38,22 @@ Rotating `APP_SECRET` invalidates CSRF tokens, signed asset URLs and rate-limit 
 | `LOG_LEVEL` | debug, info, warn, error | info |
 
 ## 4. Migrate & deploy
+
+### Option A: Cloudflare Workers Builds (Git integration, what production uses)
+Worker **`signa-api`** → Settings → Build:
+
+| Setting | Value |
+|---|---|
+| Git repository | `new-project-signa`, branch `main` |
+| Build command | `npm ci` |
+| Deploy command | `npm run deploy` (applies pending D1 migrations, then deploys the production environment) |
+| Root directory | `/` |
+
+`[env.production] name = "signa-api"` must match the Worker name in the dashboard. Secrets such as `APP_SECRET` are set under Worker → Settings → Variables and Secrets (type **Secret**). Every push to `main` builds, applies pending migrations and deploys.
+
+Temporary address: `https://signa-api.abd-digital.workers.dev` (`/health`, `/ready`, `/api/v1`). A newly created `workers.dev` subdomain can return `NXDOMAIN` from some resolvers for a while (cached negative answers), even though it resolves globally.
+
+### Option B: from a terminal
 ```bash
 npm ci && npm run typecheck && npm test
 npx wrangler d1 migrations apply signa-db-production --remote --env production

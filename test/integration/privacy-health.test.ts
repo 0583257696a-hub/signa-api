@@ -93,7 +93,33 @@ describe('health, errors & maintenance', () => {
     expect(await live.json()).toEqual({ status: 'ok' });
     const ready = await h.app.request('/ready', {}, h.env);
     expect(ready.status).toBe(200);
-    expect(await ready.json()).toEqual({ status: 'ready', checks: { database: 'ok', storage: 'ok', queue: 'ok' } });
+    expect(await ready.json()).toEqual({ status: 'ready', checks: { configuration: 'ok', database: 'ok', storage: 'ok', queue: 'ok' } });
+    expect((await h.app.request('/health/', {}, h.env)).status).toBe(200);
+    expect((await h.app.request('/api/v1/plans/', {}, h.env)).status).toBe(200);
+    const root = await h.app.request('/', {}, h.env);
+    expect(await root.json()).toMatchObject({ service: 'signa-api', status: 'ok' });
+  });
+
+  it('stays alive and reports not-ready when configuration is invalid (e.g. missing APP_SECRET)', async () => {
+    const { createApp } = await import('../../src/app');
+    const app = createApp();
+    const env = { DB: {} as D1Database, APP_ENV: 'production', APP_BASE_URL: 'https://signa.example' };
+    const errors: string[] = [];
+    const orig = console.error;
+    console.error = (l: string) => errors.push(l);
+    try {
+      expect((await app.request('/health', {}, env)).status).toBe(200);
+      expect((await app.request('/', {}, env)).status).toBe(200);
+      const ready = await app.request('/ready', {}, env);
+      expect(ready.status).toBe(503);
+      expect(await ready.json()).toEqual({ status: 'not_ready', checks: { configuration: 'fail' } });
+      const api = await app.request('/api/v1/plans', {}, env);
+      expect(api.status).toBe(503);
+      expect(await api.text()).not.toContain('APP_SECRET');
+    } finally {
+      console.error = orig;
+    }
+    expect(errors.join('\n')).toContain('APP_SECRET');
   });
 
   it('reports not ready when the database is down', async () => {

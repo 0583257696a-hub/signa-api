@@ -12,6 +12,17 @@ workers_dev = true
 [observability]
 enabled = true
 
+# The web app (Next.js static export in ./web) is built on every deploy and served
+# as static assets from this same Worker, so the site and the API share one origin.
+[build]
+command = "npm run build:web"
+
+[assets]
+directory = "./web/out"
+not_found_handling = "404-page"
+# Only API/health routes run the Worker; everything else is served from static assets.
+run_worker_first = ["/api/*", "/health*", "/ready*"]
+
 [vars]
 APP_ENV = "development"
 APP_BASE_URL = "http://localhost:3000"
@@ -28,7 +39,7 @@ SIGN_RESULT_TTL_SECONDS = "3600"
 [[d1_databases]]
 binding = "DB"
 database_name = "signa-db"
-database_id = "a19458fd-f2ab-48c0-ad9c-fd4c185eaf39" # replace after `wrangler d1 create signa-db`
+database_id = "00000000-0000-0000-0000-000000000000" # replace after `wrangler d1 create signa-db`
 migrations_dir = "migrations"
 
 [[r2_buckets]]
@@ -102,14 +113,16 @@ crons = ["*/10 * * * *"]
 
 # ---------------------------------------------------------------------------
 [env.production]
-name = "signa-api-production"
-workers_dev = false
+name = "signa-api" # must match the Worker connected in the Cloudflare dashboard
+# Temporary: served on https://signa-api.<account-subdomain>.workers.dev until a custom domain is set.
+workers_dev = true
 
 [env.production.vars]
 APP_ENV = "production"
-APP_BASE_URL = "https://signa.example"
-API_BASE_URL = "https://api.signa.example"
-CORS_ALLOWED_ORIGINS = "https://signa.example"
+# Site and API are served from the same Worker (same origin).
+APP_BASE_URL = "https://signa-api.abd-digital.workers.dev"
+API_BASE_URL = "https://signa-api.abd-digital.workers.dev"
+CORS_ALLOWED_ORIGINS = "https://signa-api.abd-digital.workers.dev"
 LOG_LEVEL = "info"
 # Delivery stays disabled until a real provider adapter is implemented and configured.
 EMAIL_PROVIDER = "disabled"
@@ -123,7 +136,7 @@ SIGN_RESULT_TTL_SECONDS = "3600"
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "signa-db-production"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "777cd7ee-633d-49f7-b9b5-1f1652fe92bf"
 migrations_dir = "migrations"
 
 [[env.production.r2_buckets]]

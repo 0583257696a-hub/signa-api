@@ -12,6 +12,19 @@ It runs on **Cloudflare Workers** with **Hono**, **D1** (SQLite), **R2**, **Queu
 > It has **not** been deployed to a Cloudflare account. No real payment provider, email provider or
 > validated ISL translation engine is connected yet. Those sit behind interfaces, with safe defaults (see [What remains](#what-remains)).
 
+## Web app
+
+`web/` is the Signa frontend (Next.js + React + TypeScript, static export), built from the UI mockups:
+sign-language and emoji translation, history (opt-in), dictionary, usage & plans, settings/accessibility,
+help and a staff overview, in Hebrew (RTL) and English. It is built on every deploy (`[build]` in
+`wrangler.toml`) and served as static assets **by the same Worker**, so the site and the API share one
+origin (`/api/*`, `/health`, `/ready` run the Worker; everything else is static).
+
+```bash
+npm run build:web     # builds web/out
+npx wrangler dev      # site + API on http://localhost:8787
+```
+
 ## Quick start
 
 ```bash

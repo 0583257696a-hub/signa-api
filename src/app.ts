@@ -21,10 +21,34 @@ import { buildServices } from './services';
  * services are built from Worker bindings.
  */
 export function createApp(overrides: Partial<Services> = {}) {
-  const app = new Hono<AppEnv>();
+  // strict: false — '/health/' and '/health' are the same route (browsers often add a trailing slash).
+  const app = new Hono<AppEnv>({ strict: false });
+
+  // Liveness and the service banner must answer even when configuration is broken,
+  // so they are registered before the services container is built.
+  app.get('/', (c) => {
+    c.header('Cache-Control', 'no-store');
+    return c.json({ service: 'signa-api', status: 'ok', endpoints: { health: '/health', ready: '/ready', api: '/api/v1' } });
+  });
+  app.get('/health', (c) => {
+    c.header('Cache-Control', 'no-store');
+    return c.json({ status: 'ok' });
+  });
 
   app.use('*', async (c, next) => {
-    c.set('services', buildServices(c.env, overrides));
+    let services: Services;
+    try {
+      services = buildServices(c.env, overrides);
+    } catch (e) {
+      // Invalid configuration (e.g. a missing APP_SECRET). The log names the offending
+      // settings — never their values; the public response stays generic.
+      console.error(JSON.stringify({ level: 'error', event: 'configuration_invalid', detail: e instanceof Error ? e.message.slice(0, 500) : 'unknown' }));
+      const body = c.req.path === '/ready'
+        ? { status: 'not_ready', checks: { configuration: 'fail' } }
+        : { error: { code: 'service_unavailable', class: 'dependency', message: 'Service is not configured yet.' }, meta: { requestId: null } };
+      return c.json(body, 503, { 'Cache-Control': 'no-store' });
+    }
+    c.set('services', services);
     await next();
   });
   app.use('*', requestContext);

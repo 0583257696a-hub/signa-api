@@ -8,14 +8,11 @@ import type { AppEnv } from '../../context';
  */
 export const healthRoutes = new Hono<AppEnv>();
 
-healthRoutes.get('/health', (c) => {
-  c.header('Cache-Control', 'no-store');
-  return c.json({ status: 'ok' });
-});
+// GET /health and GET / are registered in app.ts, ahead of configuration loading.
 
 healthRoutes.get('/ready', async (c) => {
   const svc = c.get('services');
-  const checks: Record<string, 'ok' | 'fail' | 'not_configured'> = {};
+  const checks: Record<string, 'ok' | 'fail' | 'not_configured'> = { configuration: 'ok' };
   try {
     await svc.db.prepare('SELECT 1 AS ok').first();
     checks.database = 'ok';

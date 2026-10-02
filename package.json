@@ -1,13 +1,15 @@
 {
-  "name": "signa-api",
+  "name": "signa-backend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Signa backend API: Cloudflare Workers + Hono + D1 + R2 + Queues",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler d1 migrations apply signa-db-production --remote --env production && wrangler deploy --env production",
+    "deploy:dev": "wrangler deploy",
     "typecheck": "tsc --noEmit",
+    "build:web": "npm --prefix web ci && npm --prefix web run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate:local": "wrangler d1 migrations apply signa-db --local",
